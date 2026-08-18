@@ -20,12 +20,6 @@ on:
         description: "Space-separated package names to build (default: packages.txt)"
         required: false
         default: ""
-  push:
-    branches: [ master ]
-    paths:
-      - packages.txt
-      - scripts/properties.sh
-      - .github/workflows/build-packages.yml
 
 permissions:
   contents: read

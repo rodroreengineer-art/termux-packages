@@ -1,7 +1,7 @@
 # Builds the curated package set for all 4 ABIs and publishes a signed apt
-# repository to the rodroidmods/termux-repo repository (served via GitHub
-# Pages). Place this at `.github/workflows/build-packages.yml` in the
-# rodroidmods/termux-packages fork.
+# repository to the rodroreengineer-art/termux-repo repository (served via
+# GitHub Pages). Place this at `.github/workflows/build-packages.yml` in the
+# rodroreengineer-art/termux-packages fork.
 #
 # The package-builder container needs FUSE + CAP_SYS_ADMIN + AppArmor, so the
 # build runs through scripts/run-docker.sh on the host runner (not a
@@ -106,7 +106,7 @@ jobs:
           git config --global user.name "Android Code Studio"
           git config --global user.email "packages@rodroid.codestudio"
           rm -rf termux-repo-host
-          git clone "https://x-access-token:${TOKEN}@github.com/rodroidmods/termux-repo.git" termux-repo-host
+          git clone "https://x-access-token:${TOKEN}@github.com/rodroreengineer-art/termux-repo.git" termux-repo-host
           cd termux-repo-host
           git checkout -B gh-pages
           find . -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +

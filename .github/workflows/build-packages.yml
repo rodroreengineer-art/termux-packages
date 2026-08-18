@@ -42,13 +42,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Enable zram
-        uses: ./.github/actions/zram
-        with:
-          algorithm: zstd
-          size: 16G
-          priority: 100
-          device_name: /dev/zram0
+      # NOTE: zram (16G swap) may be needed for very large packages
+      # (rust/llvm). Re-enable `.github/actions/zram` here with
+      # `continue-on-error: true` if those builds run out of memory.
 
       - name: Build packages
         env:

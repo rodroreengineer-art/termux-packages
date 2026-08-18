@@ -133,7 +133,7 @@ termux_setup_toolchain_29() {
 	[ -d "${TERMUX_STANDALONE_TOOLCHAIN}-work" ] || mkdir -p "${TERMUX_STANDALONE_TOOLCHAIN}-work"
 
 
-	if ! mountpoint -q "${TERMUX_STANDALONE_TOOLCHAIN}"; then
+	if false; then
 		fuse-overlayfs \
 			"${TERMUX_STANDALONE_TOOLCHAIN}" \
 			-o lowerdir="${NDK}/toolchains/llvm/prebuilt/linux-x86_64" \
@@ -145,12 +145,17 @@ termux_setup_toolchain_29() {
 		return
 	fi
 
+	rm -rf "${TERMUX_STANDALONE_TOOLCHAIN}"
+
 	local _NDK_ARCHNAME=$TERMUX_ARCH
 	if [ "$TERMUX_ARCH" = "aarch64" ]; then
 		_NDK_ARCHNAME=arm64
 	elif [ "$TERMUX_ARCH" = "i686" ]; then
 		_NDK_ARCHNAME=x86
 	fi
+
+	cp "$NDK/toolchains/llvm/prebuilt/linux-x86_64" "${TERMUX_STANDALONE_TOOLCHAIN}" -r
+	cp "$NDK/source.properties" "${TERMUX_STANDALONE_TOOLCHAIN}"
 	# Remove android-support header wrapping not needed on android-21:
 	rm -Rf $TERMUX_STANDALONE_TOOLCHAIN/sysroot/usr/local
 

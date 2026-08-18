@@ -45,30 +45,6 @@ jobs:
           priority: 100
           device_name: /dev/zram0
 
-      - name: Install missing Android SDK components
-        # termux-am (dep of termux-tools -> pkg) compiles an APK via Gradle and
-        # needs platforms;android-33 + build-tools;30.0.3, which the
-        # package-builder image does not ship. Pre-install them into the
-        # container (run-docker.sh reuses the named container on the next call).
-        run: |
-          ./scripts/run-docker.sh bash -c '
-            set -e
-            . ./scripts/properties.sh
-            SDKMGR="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
-            [ -x "$SDKMGR" ] || SDKMGR="$ANDROID_HOME/cmdline-tools/bin/sdkmanager"
-            if [ ! -x "$SDKMGR" ]; then
-              echo "sdkmanager not found in $ANDROID_HOME" >&2
-              find "$ANDROID_HOME" -name sdkmanager >&2
-              exit 1
-            fi
-            yes | "$SDKMGR" --sdk_root="$ANDROID_HOME" --licenses >/dev/null || true
-            yes | "$SDKMGR" --sdk_root="$ANDROID_HOME" \
-              "platforms;android-33" \
-              "build-tools;30.0.3"
-            echo "Installed SDK components:"
-            ls "$ANDROID_HOME/platforms" "$ANDROID_HOME/build-tools"
-          '
-
       - name: Build packages
         env:
           PKGS: ${{ github.event.inputs.packages }}

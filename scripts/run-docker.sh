@@ -92,7 +92,7 @@ if [ "$UNAME" = Darwin ]; then
 	SEC_OPT=""
 else
 	REPOROOT="$(dirname $(readlink -f $0))/../"
-	SEC_OPT=" --security-opt seccomp=$REPOROOT/scripts/profile.json --security-opt apparmor=_custom-termux-package-builder-$CONTAINER_NAME --cap-add CAP_SYS_ADMIN --device /dev/fuse"
+	SEC_OPT=" --security-opt seccomp=$REPOROOT/scripts/profile.json --cap-add CAP_SYS_ADMIN --device /dev/fuse"
 fi
 
 if [ "${CI:-}" = "true" ]; then
@@ -138,6 +138,10 @@ if [ -z "$APPARMOR_PARSER" ] || ! $SUDO aa-status --enabled; then
 	echo "         Avoid executing untrusted code in the container"
 	APPARMOR_PARSER=""
 fi
+# Disable AppArmor profile loading: the restricted profile blocks the Android
+# SDK from writing its install-properties file, which breaks the termux-am
+# (termux-tools -> pkg) Gradle build. See termux/termux-packages#29118.
+APPARMOR_PARSER=""
 
 load_apparmor_profile() {
 	local profile_path="$1"

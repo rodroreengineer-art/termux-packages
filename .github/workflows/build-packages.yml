@@ -3,6 +3,10 @@
 # Pages). Place this at `.github/workflows/build-packages.yml` in the
 # rodroidmods/termux-packages fork.
 #
+# The package-builder container needs FUSE + CAP_SYS_ADMIN + AppArmor, so the
+# build runs through scripts/run-docker.sh on the host runner (not a
+# `container:` job), matching upstream termux-packages.
+#
 # Required secrets (set on the termux-packages fork):
 #   GPG_SIGNING_KEY  - armored private GPG key used to sign the repo
 #   GH_PUSH_TOKEN    - PAT with repo scope to push the repo to termux-repo
@@ -29,39 +33,52 @@ permissions:
 jobs:
   build:
     name: Build (${{ matrix.arch }})
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         arch: [aarch64, arm, i686, x86_64]
-    container:
-      image: ghcr.io/termux/package-builder:latest
-      options: --user root
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Enable zram
+        uses: ./.github/actions/zram
+        with:
+          algorithm: zstd
+          size: 16G
+          priority: 100
+          device_name: /dev/zram0
 
       - name: Build packages
         env:
           PKGS: ${{ github.event.inputs.packages }}
         run: |
           if [ -n "$PKGS" ]; then
-            ./build-package.sh -a "${{ matrix.arch }}" -F -o output $PKGS
+            LIST="$PKGS"
           else
-            ./build-package.sh -a "${{ matrix.arch }}" -F -o output $(tr '\n' ' ' < packages.txt)
+            LIST="$(tr '\n' ' ' < packages.txt)"
           fi
+          echo "Building for ${{ matrix.arch }}: $LIST"
+          ./scripts/run-docker.sh ./build-package.sh -F -a "${{ matrix.arch }}" $LIST
+
+      - name: Collect debs
+        run: |
+          mkdir -p debs
+          find output -name '*.deb' -exec cp -n {} debs/ \; 2>/dev/null || true
+          echo "Collected $(find debs -name '*.deb' | wc -l) packages"
 
       - name: Upload debs
         uses: actions/upload-artifact@v4
         with:
           name: debs-${{ matrix.arch }}
-          path: output/**/*.deb
+          path: debs/*.deb
           if-no-files-found: error
 
   publish:
     name: Publish apt repository
     needs: build
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     permissions:
       contents: read
     steps:

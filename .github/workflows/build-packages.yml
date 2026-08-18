@@ -52,7 +52,7 @@ jobs:
           if [ -n "$PKGS" ]; then
             LIST="$PKGS"
           else
-            LIST="$(tr '\n' ' ' < packages.txt)"
+            LIST="$(grep -vE '^\s*#' packages.txt | tr '\n' ' ')"
           fi
           echo "Building for ${{ matrix.arch }}: $LIST"
           ./scripts/run-docker.sh ./build-package.sh -F -a "${{ matrix.arch }}" $LIST

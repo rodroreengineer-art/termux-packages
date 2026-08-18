@@ -1,0 +1,99 @@
+# Builds the curated package set for all 4 ABIs and publishes a signed apt
+# repository to the rodroidmods/termux-repo repository (served via GitHub
+# Pages). Place this at `.github/workflows/build-packages.yml` in the
+# rodroidmods/termux-packages fork.
+#
+# Required secrets (set on the termux-packages fork):
+#   GPG_SIGNING_KEY  - armored private GPG key used to sign the repo
+#   GH_PUSH_TOKEN    - PAT with repo scope to push the repo to termux-repo
+
+name: Build packages
+
+on:
+  workflow_dispatch:
+    inputs:
+      packages:
+        description: "Space-separated package names to build (default: packages.txt)"
+        required: false
+        default: ""
+  push:
+    branches: [ master ]
+    paths:
+      - packages.txt
+      - scripts/properties.sh
+      - .github/workflows/build-packages.yml
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build (${{ matrix.arch }})
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [aarch64, arm, i686, x86_64]
+    container:
+      image: ghcr.io/termux/package-builder:latest
+      options: --user root
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build packages
+        env:
+          PKGS: ${{ github.event.inputs.packages }}
+        run: |
+          if [ -n "$PKGS" ]; then
+            ./build-package.sh -a "${{ matrix.arch }}" -F -o output $PKGS
+          else
+            ./build-package.sh -a "${{ matrix.arch }}" -F -o output $(tr '\n' ' ' < packages.txt)
+          fi
+
+      - name: Upload debs
+        uses: actions/upload-artifact@v4
+        with:
+          name: debs-${{ matrix.arch }}
+          path: output/**/*.deb
+          if-no-files-found: error
+
+  publish:
+    name: Publish apt repository
+    needs: build
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - name: Download all debs
+        uses: actions/download-artifact@v4
+        with:
+          pattern: debs-*
+          merge-multiple: true
+          path: debs
+
+      - name: Install termux-apt-repo
+        run: pip3 install termux-apt-repo
+
+      - name: Import GPG key
+        run: printf '%s' "${{ secrets.GPG_SIGNING_KEY }}" | gpg --batch --import
+
+      - name: Generate signed repository
+        run: termux-apt-repo --sign debs repo stable main
+
+      - name: Publish to termux-repo
+        env:
+          TOKEN: ${{ secrets.GH_PUSH_TOKEN }}
+        run: |
+          set -euo pipefail
+          git config --global user.name "Android Code Studio"
+          git config --global user.email "packages@rodroid.codestudio"
+          rm -rf termux-repo-host
+          git clone "https://x-access-token:${TOKEN}@github.com/rodroidmods/termux-repo.git" termux-repo-host
+          cd termux-repo-host
+          git checkout -B gh-pages
+          find . -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
+          cp -r ../repo/. ./
+          git add -A
+          git commit -m "Publish packages $(date -u +%Y-%m-%dT%H:%M:%SZ)" || echo "nothing to commit"
+          git push origin gh-pages --force

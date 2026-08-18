@@ -1,0 +1,48 @@
+# Curated list of top-level packages to build for the IDE's self-hosted repo.
+#
+# Transitive dependencies are resolved automatically by
+# `./build-package.sh -F <packages>`, so only list the top-level packages the
+# app actually `pkg install`s. Subpackages (clang/lld/llvm/libcompiler-rt from
+# libllvm, xz-utils from liblzma, rust-std-* from rust) are built automatically
+# as part of their parent package.
+#
+# Source: decrypted `idesetup` script + `rust-setup.sh`, mapped onto current
+# termux-packages package layout.
+
+# --- Base / IDE setup (idesetup) ---
+jq
+tar
+wget
+libcurl
+dos2unix
+unzip
+sed
+openssh
+git
+openjdk-17
+openjdk-21
+
+# --- C/C++ / native toolchain (libllvm builds clang, lld, llvm, libcompiler-rt) ---
+libllvm
+cmake
+ninja
+make
+ndk-sysroot
+
+# --- Rust + runtime deps (liblzma builds xz-utils; rust builds rust-std-*) ---
+rust
+liblzma
+ca-certificates
+openssl
+libxml2
+zstd
+ncurses
+libffi
+libiconv
+libicu
+zlib
+libandroid-execinfo
+libandroid-glob
+
+# --- Scripting ---
+python

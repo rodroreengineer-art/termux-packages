@@ -61,7 +61,12 @@ jobs:
       - name: Collect debs
         run: |
           mkdir -p debs
-          find output -name '*.deb' -exec cp -n {} debs/ \; 2>/dev/null || true
+          # Debian epochs use ':' (e.g. 1:2026.07.16), which upload-artifact
+          # rejects. Sanitize the filename; the epoch lives in the .deb control
+          # data so termux-apt-repo still reads the correct version.
+          find output -name '*.deb' -print0 | while IFS= read -r -d '' f; do
+            cp -n "$f" "debs/$(basename "$f" | tr ':' '_')"
+          done
           echo "Collected $(find debs -name '*.deb' | wc -l) packages"
 
       - name: Upload debs

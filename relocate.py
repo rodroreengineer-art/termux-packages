@@ -210,6 +210,17 @@ def repack(deb_path, out_dir):
     subprocess.run(["dpkg-deb", "-x", deb_path, work], check=True)
     # also extract control metadata (DEBIAN/control etc.) so we can rebuild
     subprocess.run(["dpkg-deb", "-e", deb_path, os.path.join(work, "DEBIAN")], check=True)
+    # dpkg-deb -b rejects maintainer scripts with 0700 perms (extraction does
+    # not normalize them), so enforce valid control-file permissions.
+    debian = os.path.join(work, "DEBIAN")
+    for fn in os.listdir(debian):
+        p = os.path.join(debian, fn)
+        if fn == "control":
+            os.chmod(p, 0o644)
+        elif fn in ("postinst", "postrm", "preinst", "prerm", "config"):
+            os.chmod(p, 0o755)
+        else:
+            os.chmod(p, 0o644)
     data_dir = os.path.join(work, "data", "data", "com.termux", "files", "usr")
     root = data_dir if os.path.isdir(data_dir) else work
     n_elf, n_shebang, n_text = relocate_extracted(root)

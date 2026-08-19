@@ -121,5 +121,21 @@ jobs:
           git add -A
           git commit -m "Publish packages $(date -u +%Y-%m-%dT%H:%M:%SZ)" || echo "nothing to commit"
           git remote add origin "https://oauth2:${TOKEN}@gitlab.com/rodroreengineer/termux-repo.git"
-          git push -f origin main
+          git config http.postBuffer 524288000
+          # GitLab occasionally returns HTTP 500 on the ref push right after a
+          # large LFS upload; retry with backoff (LFS objects are already up,
+          # so a retry is cheap).
+          for attempt in 1 2 3 4 5; do
+            echo "--- push attempt $attempt ---"
+            if git push -f origin main 2>&1 | tee /tmp/push.log; then
+              echo "--- push succeeded ---"
+              break
+            fi
+            if [ "$attempt" -eq 5 ]; then
+              echo "--- push failed after $attempt attempts ---"
+              exit 1
+            fi
+            echo "--- push failed, retrying in 30s ---"
+            sleep 30
+          done
           echo "Published to https://gitlab.com/rodroreengineer/termux-repo/-/raw/main/"

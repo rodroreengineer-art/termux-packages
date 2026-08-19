@@ -1,13 +1,9 @@
-# Curated list of top-level packages to build for the IDE's self-hosted repo.
+# Curated list of top-level packages for the IDE's self-hosted repo.
 #
-# Transitive dependencies are resolved automatically by
-# `./build-package.sh -F <packages>`, so only list the top-level packages the
-# app actually `pkg install`s. Subpackages (clang/lld/llvm/libcompiler-rt from
-# libllvm, xz-utils from liblzma, rust-std-* from rust) are built automatically
-# as part of their parent package.
-#
-# Source: decrypted `idesetup` script + `rust-setup.sh`, mapped onto current
-# termux-packages package layout.
+# These are relocated from Termux's *prebuilt* packages (see relocate.py)
+# instead of being rebuilt from source, so each name must match a real
+# package in termux-main. Transitive dependencies are resolved automatically
+# by relocate.py, so only top-level `pkg install` targets are listed.
 
 # --- Base / IDE setup (idesetup) ---
 jq
@@ -22,16 +18,19 @@ git
 openjdk-17
 openjdk-21
 
-# --- C/C++ / native toolchain (libllvm builds clang, lld, llvm, libcompiler-rt) ---
-libllvm
+# --- C/C++ / native toolchain ---
+clang
+lld
+llvm
+libcompiler-rt
 cmake
 ninja
 make
 ndk-sysroot
 
-# --- Rust + runtime deps (liblzma builds xz-utils; rust builds rust-std-*) ---
+# --- Rust + runtime deps ---
 rust
-liblzma
+xz-utils
 ca-certificates
 openssl
 libxml2

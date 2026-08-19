@@ -225,7 +225,9 @@ def repack(deb_path, out_dir):
     root = data_dir if os.path.isdir(data_dir) else work
     n_elf, n_shebang, n_text = relocate_extracted(root)
     out = os.path.join(out_dir, name)
-    subprocess.run(["dpkg-deb", "-b", work, out], check=True)
+    # termux-apt-repo only understands control.tar.xz/gz and data.tar.xz, so
+    # force xz (dpkg-deb otherwise defaults to zstd on modern hosts).
+    subprocess.run(["dpkg-deb", "-Zxz", "-b", work, out], check=True)
     shutil.rmtree(work, ignore_errors=True)
     log(f"  {name}: elf={n_elf} shebang={n_shebang} text={n_text}")
     return out

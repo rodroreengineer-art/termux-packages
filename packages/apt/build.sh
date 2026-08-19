@@ -74,8 +74,8 @@ termux_step_pre_configure() {
 
 termux_step_post_make_install() {
 	{
-		echo "# Android Code Studio self-hosted repository (rodroreengineer-art/termux-repo)"
-		echo "deb https://rodroreengineer-art.github.io/termux-repo/ stable main"
+		echo "# Android Code Studio self-hosted repository (rodroreengineer/termux-repo on GitLab)"
+		echo "deb https://gitlab.com/rodroreengineer/termux-repo/-/raw/main/ stable main"
 	} > $TERMUX_PREFIX/etc/apt/sources.list
 
 	# apt-transport-tor

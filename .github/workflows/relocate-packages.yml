@@ -53,6 +53,13 @@ jobs:
       - name: Collect debs
         run: |
           mkdir -p debs
+          # Architecture:all packages are byte-identical across arches. Only the
+          # aarch64 job keeps them, so the publish job's artifact merge doesn't
+          # collide on duplicate filenames (download-artifact merge corrupts
+          # colliding files).
+          if [ "${{ matrix.arch }}" != "aarch64" ]; then
+            find output -name '*_all.deb' -delete
+          fi
           # Debian epochs use ':' (e.g. 1:2026.07.16), which upload-artifact
           # rejects. Sanitize the filename; termux-apt-repo reads the epoch
           # from the .deb control data, so the version stays correct.

@@ -91,18 +91,22 @@ jobs:
       - name: Generate signed repository
         run: termux-apt-repo --sign debs repo stable main
 
-      - name: Publish to GitLab
+      - name: Publish to GitLab (Git LFS)
         env:
           TOKEN: ${{ secrets.GITLAB_PUSH_TOKEN }}
         run: |
           set -euo pipefail
           git config --global user.name "Android Code Studio"
           git config --global user.email "packages@rodroid.codestudio"
-          # Fresh single-commit repo each publish (no history bloat; the repo
-          # is ~1.9GB and GitHub Pages would reject >100MB files, GitLab doesn't).
+          # Fresh single-commit repo each publish. The .deb blobs are stored in
+          # Git LFS because GitLab.com Free tier rejects blobs >100MiB (rust and
+          # openjdk-21 exceed it). Raw file serving resolves LFS pointers, so apt
+          # still fetches the real bytes.
           rm -rf termux-repo-host && mkdir termux-repo-host
           cd termux-repo-host
           git init -b main
+          git lfs install --local
+          git lfs track '*.deb'
           cp -r ../repo/. ./
           git add -A
           git commit -m "Publish packages $(date -u +%Y-%m-%dT%H:%M:%SZ)" || echo "nothing to commit"

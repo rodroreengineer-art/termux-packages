@@ -28,7 +28,7 @@ jobs:
           sudo sed -i 's|azure.archive.ubuntu.com|archive.ubuntu.com|g' \
             /etc/apt/sources.list /etc/apt/sources.list.d/*.list 2>/dev/null || true
           sudo apt-get update
-          sudo apt-get install -y jq zip binutils
+          sudo apt-get install -y jq zip binutils xz-utils
 
       - name: Build bootstraps
         run: |

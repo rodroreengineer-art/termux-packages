@@ -5,14 +5,44 @@
 # package in termux-main. Transitive dependencies are resolved automatically
 # by relocate.py, so only top-level `pkg install` targets are listed.
 
+# --- Bootstrap base (generate-bootstraps.sh essentials) ---
+apt
+bash
+bzip2
+command-not-found
+coreutils
+curl
+dash
+diffutils
+findutils
+gawk
+grep
+gzip
+less
+procps
+psmisc
+sed
+tar
+termux-core
+termux-exec
+termux-keyring
+termux-tools
+util-linux
+xz-utils
+ed
+debianutils
+dos2unix
+inetutils
+lsof
+nano
+net-tools
+patch
+unzip
+
 # --- Base / IDE setup (idesetup) ---
 jq
-tar
 wget
 libcurl
-dos2unix
-unzip
-sed
 openssh
 git
 openjdk-17
@@ -30,7 +60,6 @@ ndk-sysroot
 
 # --- Rust + runtime deps ---
 rust
-xz-utils
 ca-certificates
 openssl
 libxml2

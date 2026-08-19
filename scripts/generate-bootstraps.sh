@@ -275,6 +275,16 @@ add_termux_bootstrap_second_stage_files() {
 
 }
 
+# Inject the self-hosted repository config into the bootstrap rootfs:
+# point apt at the self-hosted repository and ship its signing key.
+add_self_hosted_repo_config() {
+	echo "[*] Configuring self-hosted repository..."
+	mkdir -p "${BOOTSTRAP_ROOTFS}/${TERMUX_PREFIX}/etc/apt/trusted.gpg.d"
+	echo "deb ${REPO_BASE_URL} stable main" > "${BOOTSTRAP_ROOTFS}/${TERMUX_PREFIX}/etc/apt/sources.list"
+	cp "$TERMUX_SCRIPTDIR/packages/termux-keyring/codestudio.gpg" \
+		"${BOOTSTRAP_ROOTFS}/${TERMUX_PREFIX}/etc/apt/trusted.gpg.d/codestudio.gpg"
+}
+
 # Final stage: generate bootstrap archive and place it to current
 # working directory.
 # Information about symlinks is stored in file SYMLINKS.txt.
@@ -498,6 +508,9 @@ for package_arch in "${TERMUX_ARCHITECTURES[@]}"; do
 
 	# Add termux bootstrap second stage files
 	add_termux_bootstrap_second_stage_files "$package_arch"
+
+	# Inject the self-hosted repository config
+	add_self_hosted_repo_config
 
 	# Create bootstrap archive.
 	create_bootstrap_archive "$package_arch"

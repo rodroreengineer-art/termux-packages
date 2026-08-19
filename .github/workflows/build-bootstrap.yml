@@ -1,0 +1,45 @@
+# Assembles Termux bootstrap zips for all 4 ABIs from the self-hosted
+# apt repository (rodroreengineer/termux-repo on GitLab). generate-bootstraps.sh
+# only downloads and repackages prebuilt debs, so this runs on a plain Ubuntu
+# runner (no docker/FUSE needed).
+#
+# Place at `.github/workflows/build-bootstrap.yml` in the
+# rodroreengineer-art/termux-packages fork.
+
+name: Build bootstraps
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  bootstrap:
+    name: Build bootstrap zips
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install tools
+        run: |
+          # Avoid the flaky azure.archive.ubuntu.com mirror.
+          sudo sed -i 's|azure.archive.ubuntu.com|archive.ubuntu.com|g' \
+            /etc/apt/sources.list /etc/apt/sources.list.d/*.list 2>/dev/null || true
+          sudo apt-get update
+          sudo apt-get install -y jq zip binutils
+
+      - name: Build bootstraps
+        run: |
+          ./scripts/generate-bootstraps.sh \
+            --repository https://gitlab.com/rodroreengineer/termux-repo/-/raw/main
+          echo "=== produced ==="
+          ls -la bootstrap-*.zip
+
+      - name: Upload bootstrap zips
+        uses: actions/upload-artifact@v4
+        with:
+          name: bootstraps
+          path: bootstrap-*.zip
+          if-no-files-found: error

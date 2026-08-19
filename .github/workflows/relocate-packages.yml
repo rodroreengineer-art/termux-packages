@@ -108,6 +108,9 @@ jobs:
           git lfs install --local
           git lfs track '*.deb'
           cp -r ../repo/. ./
+          # ship the apt signing public key in the repo root so devices can
+          # install it: curl .../codestudio.gpg > $PREFIX/etc/apt/trusted.gpg.d/
+          gpg --export "Android Code Studio Packages" > codestudio.gpg
           git add -A
           git commit -m "Publish packages $(date -u +%Y-%m-%dT%H:%M:%SZ)" || echo "nothing to commit"
           git remote add origin "https://oauth2:${TOKEN}@gitlab.com/rodroreengineer/termux-repo.git"

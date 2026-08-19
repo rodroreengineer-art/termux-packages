@@ -9,8 +9,8 @@
 # rodroreengineer-art/termux-packages fork.
 #
 # Required secrets (set on the fork):
-#   GPG_SIGNING_KEY  - armored private GPG key used to sign the repo
-#   GH_PUSH_TOKEN    - PAT with repo scope to push the repo to termux-repo
+#   GPG_SIGNING_KEY     - armored private GPG key used to sign the repo
+#   GITLAB_PUSH_TOKEN   - GitLab PAT with write_repository on rodroreengineer/termux-repo
 
 name: Relocate packages
 
@@ -91,19 +91,21 @@ jobs:
       - name: Generate signed repository
         run: termux-apt-repo --sign debs repo stable main
 
-      - name: Publish to termux-repo
+      - name: Publish to GitLab
         env:
-          TOKEN: ${{ secrets.GH_PUSH_TOKEN }}
+          TOKEN: ${{ secrets.GITLAB_PUSH_TOKEN }}
         run: |
           set -euo pipefail
           git config --global user.name "Android Code Studio"
           git config --global user.email "packages@rodroid.codestudio"
-          rm -rf termux-repo-host
-          git clone "https://x-access-token:${TOKEN}@github.com/rodroreengineer-art/termux-repo.git" termux-repo-host
+          # Fresh single-commit repo each publish (no history bloat; the repo
+          # is ~1.9GB and GitHub Pages would reject >100MB files, GitLab doesn't).
+          rm -rf termux-repo-host && mkdir termux-repo-host
           cd termux-repo-host
-          git checkout -B gh-pages
-          find . -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
+          git init -b main
           cp -r ../repo/. ./
           git add -A
           git commit -m "Publish packages $(date -u +%Y-%m-%dT%H:%M:%SZ)" || echo "nothing to commit"
-          git push origin gh-pages --force
+          git remote add origin "https://oauth2:${TOKEN}@gitlab.com/rodroreengineer/termux-repo.git"
+          git push -f origin main
+          echo "Published to https://gitlab.com/rodroreengineer/termux-repo/-/raw/main/"

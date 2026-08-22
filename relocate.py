@@ -221,7 +221,31 @@ def repack(deb_path, out_dir):
             os.chmod(p, 0o755)
         else:
             os.chmod(p, 0o644)
-    data_dir = os.path.join(work, "data", "data", "com.termux", "files", "usr")
+    # Termux debs ship files under data/data/com.termux/files/usr (the tar paths
+    # are absolute-from-root). dpkg extracts them relative to "/", so for the
+    # renamed app they must be renamed to com.rodroid.codestudio, otherwise
+    # `pkg install` would write everything under /data/data/com.termux/...
+    old_data = os.path.join(work, "data", "data", "com.termux")
+    new_data = os.path.join(work, "data", "data", "com.rodroid.codestudio")
+    if os.path.isdir(old_data) and not os.path.isdir(new_data):
+        os.makedirs(os.path.dirname(new_data), exist_ok=True)
+        os.rename(old_data, new_data)
+    # Control metadata (conffiles, maintainer scripts, etc.) may also reference
+    # the com.termux prefix; rewrite those too.
+    debian = os.path.join(work, "DEBIAN")
+    for fn in os.listdir(debian):
+        p = os.path.join(debian, fn)
+        if fn in ("conffiles", "config", "postinst", "postrm", "preinst", "prerm", "templates"):
+            try:
+                with open(p, "rb") as f:
+                    data = f.read()
+                if OLD.encode() in data:
+                    with open(p, "wb") as f:
+                        f.write(data.replace(OLD.encode(), NEW.encode()))
+            except Exception:
+                pass
+
+    data_dir = os.path.join(work, "data", "data", "com.rodroid.codestudio", "files", "usr")
     root = data_dir if os.path.isdir(data_dir) else work
     n_elf, n_shebang, n_text = relocate_extracted(root)
     out = os.path.join(out_dir, name)
